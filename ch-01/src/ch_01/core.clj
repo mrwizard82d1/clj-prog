@@ -331,5 +331,76 @@ p
    (let [[username account & {:keys [name city]}] user-info]
      (format "%s is in %s." name city)))
 
+;; Creating anonymous functions.
+(= 18 ((fn [x] (+ 10 x)) 8))
+
+;; And anonymous functions with multiple arguments.
+(= 19 ((fn [x y z] (+ x y z)) 3 4 12))
+
+;; Anonymous functions with multiple arities.
+(def strange-adder (fn adder-self-reference
+                     ([x] (adder-self-reference x 1))
+                     ([x y] (+ x y))))
+(= 11 (strange-adder 10))
+(= 60 (strange-adder 10 50))
+
+;; Mutually recursive functions.
+(true? (letfn [(odd? [n]
+              (even? (dec n)))
+        (even? [n]
+               (or (zero? n)
+                   (odd? (dec n))))]
+  (odd? 11)))
+
+;; Variadic functions
+(defn concat-rest
+  [x & rest]
+  (apply str (butlast rest)))
+(= "123" (concat-rest 0 1 2 3 4))
 
 
+(defn make-user
+  [& [user-id]]
+  {:user-id (or user-id
+                (str (java.util.UUID/randomUUID)))})
+(= {:user-id "Bobby"} (make-user "Bobby"))
+(not (empty? (:user-id (make-user))))
+
+
+(defn make-user
+  [username & {:keys [join-date email]
+               :or {join-date (java.util.Date.)}}]
+  {:username username
+   :join-date join-date
+   :email email
+   ;; 2.592e9 -> one month in ms
+   :exp-date (java.util.Date. (long (+ 2.592e9 (.getTime join-date))))})
+(defn test-make-user
+  [cut expect-name expect-join-date expect-email]
+  (and (= expect-name (:username cut))
+       (let [actual-join-date (.getTime (:join-date cut))
+             expect-join-date (.getTimeInMillis
+                               expect-join-date)]
+         (and
+          (< (- expect-join-date 10)
+             actual-join-date
+             (+ expect-join-date 10))
+          (= expect-email (:email cut))
+          (< (- (+ 2.592e9 expect-join-date) 10)
+             (.getTime (:exp-date cut))
+             (+ (+ 2.592e9 expect-join-date) 10))
+          ))))
+(let [cut (make-user "Bobby")]
+  (test-make-user cut "Bobby" (java.util.GregorianCalendar.) nil))
+(let [cut (make-user "Bobby"
+                     :join-date (java.util.Date. 111 0 1)
+                     :email "bobby@example.com")]
+  (test-make-user cut "Bobby"
+                  (java.util.GregorianCalendar. 2011 0 1)
+                  "bobby@example.com"))
+
+(= ((fn [x y] (Math/pow x y)) 2 3)
+   (#(Math/pow %1 %2) 2 3))
+
+
+(read-string "#(Math/pow %1 %2)")
