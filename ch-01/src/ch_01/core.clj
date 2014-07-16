@@ -404,3 +404,98 @@ p
 
 
 (read-string "#(Math/pow %1 %2)")
+
+
+;; Conditionals: if
+
+(= \t (if "hi" \t))
+(= \t (if 42 \t))
+(= \f (if nil "unevaluated" \f))
+(= \f (if false "unevaluated" \f))
+
+;; if whose expression is logically false returns nil
+(nil? (if (not true) \t))
+
+;; when is better alternative to if returning nil
+(nil? (when (not true)))
+
+;; remember that true? and false? and NOT related to if conditionals.
+(true? "hi")
+(false? 0)
+(true? (= "hi" (str \h \i)))
+
+;; if is equivalent to (or (not (nil? x)) (true? x)).
+;; I'm still confused, but the behavior appears correct.
+(defn if-equiv [x]
+  (or (not (nil? x)) (true? x)))
+(if-equiv "hi")
+(if-equiv nil)
+(if-equiv false)
+
+;; Looping: loop and recur
+(= -1
+   (loop [x 5]
+    (if (neg? x)
+      x
+      (recur(dec x)))))
+
+(defn countdown
+  [x]
+  (if (zero? x)
+    :blastoff
+    (do (println x)
+      (recur (dec x)))))
+(countdown 5)
+
+;; Prefer doseq and dotimes instead of recur.
+(doseq [x (reverse (range (inc 5)))]
+  (if (zero? x)
+    :blastoff
+    (println x)))
+(dotimes [x 5]
+  (println x))
+
+;; Refering to Vars: var
+(def x 5)
+(= 5 x)
+(var? #'x)
+(var? (var x))
+
+;; Java interop (primitives and sugared)
+
+;; object instantiation
+(= (java.util.ArrayList. 100) (new java.util.ArrayList 100))
+
+;; static method invocation
+(= (Math/pow 2 10) (. Math pow 2 10))
+
+;; instance method invocation
+(= (.substring "hello" 1 3) (. "hello" substring 1 3))
+
+;; static field access
+(= (Integer/MAX_VALUE) (. Integer Integer/MAX_VALUE))
+
+;; instance field access
+;; (= (. someField some-object) (. some-object someField))
+
+;; eval
+(= :foo (eval :foo))
+(= [1 2 3] (eval [1 2 3]))
+(= "text" (eval "text"))
+(= 160 (eval '(average [60 80 100 400])))
+
+;; An embedded repl.
+(defn embedded-repl
+  "A naive Clojure REPL implementation. Enter :quit to exit."
+  []
+  (print (str (ns-name *ns*) ">>> "))
+  (flush)
+  (let [expr (read)
+        value (eval expr)]
+    (when (not= :quit value)
+      (println value)
+      (recur))))
+
+
+
+
