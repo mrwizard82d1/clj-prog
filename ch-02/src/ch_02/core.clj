@@ -7,5 +7,4 @@
   "I don't do a whole lot ... yet."
   [& args]
   (values/do-all)
-  (println)
   (functions/do-all))
