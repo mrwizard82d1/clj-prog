@@ -80,6 +80,69 @@
                                              [4 5 6]
                                              [7 8 9])))))
 
+(defn negated-sum-str-straightforward
+  [& numbers]
+  (str (- (apply + numbers))))
+
+(def negated-sum-str (comp str - +))
+
+(def camel->keyword (comp keyword
+                          str/join
+                          (partial interpose \-)
+                          (partial map str/lower-case)
+                          #(str/split % #"(?<=[a-z])(?=[A-Z])")))
+
+(defn camel->keyword-threaded
+  [s]
+  (->> (str/split s #"(?<=[a-z])(?=[A-Z])")
+       (map str/lower-case)
+       (interpose \-)
+       str/join
+       keyword))
+
+(def camel-pairs->map (comp (partial apply hash-map)
+                            (partial map-indexed
+                                     (fn [i x]
+                                       (if (odd? i)
+                                         x
+                                         (camel->keyword x))))))
+
+(defn do-composition
+  []
+  (println (str "  "
+                "A \"straightforward\" implementation of"
+                " negating a sum of numbers as a string."))
+  (println (str "    " (negated-sum-str-straightforward 10 12 3.4)))
+  (println (str "  "
+                "The same function using comp. Remember that comp defines"
+                " new top-level functions using def and NOT using defn."))
+  (println (str "    " (negated-sum-str 10 12 3.4)))
+  (println (str "  "
+                "Reversing the order of functions in a composition"
+                " often produces an error."))
+  (try
+    ((comp + - str) 10 12 3.4)
+    (catch ClassCastException e
+      (println (str "    " e))))
+  (println (str "  "
+                "A composed function to convert camel case words to Clojure keywords."))
+  (println (str "    "
+                (camel->keyword "CamelCase")
+                "\n    "
+                (camel->keyword "lowerCamelCase")))
+  (println (str "  "
+                "The difference between using comp and using threaded macros (-> and ->>)"
+                " is often a matter of style."))
+  (println (str "    "
+                (camel->keyword-threaded "CamelCase")
+                "\n    "
+                (camel->keyword-threaded "lowerCamelCase")))
+  (println (str "  "
+                "Composed functions can be nested. We use camel->keyword as part of a"
+                " larger composition : camel-pairs->map."))
+  (println (str "    "
+                (camel-pairs->map ["CamelCase" 5 "lowerCaseCamel" 3]))))
+
 (defn do-all
   []
   (println)
@@ -102,4 +165,7 @@
   (do-partials)
   (println)
   (println "Partials versus function literals")
-  (do-literals))
+  (do-literals)
+  (println)
+  (println "Composition of functions")
+  (do-composition))
