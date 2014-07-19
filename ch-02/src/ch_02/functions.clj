@@ -143,6 +143,113 @@
   (println (str "    "
                 (camel-pairs->map ["CamelCase" 5 "lowerCaseCamel" 3]))))
 
+;; Returns a function that adds its argument to n.
+(defn adder
+  [n]
+  (fn [x] (+ x n)))
+
+;; Doubles the value of the function supplied (at a later time).
+(defn doubler
+  [f]
+  (fn [& args]
+    (* 2(apply f args))))
+
+(def doubler-+ (doubler +))
+
+(defn do-hofs
+  []
+  (println (str "  "
+                "Sigh.... An adder."))
+  (println (str "    "
+                "((adder 5) 18) => "
+                ((adder 5) 18)))
+  (println (str "  "
+                "Doubler doubles the value of the function passed in. The"
+                " arguments are passed to the function in the SECOND call."))
+  (println (str "    "
+                "(doubler-+ 1 2 3) => ")
+           (doubler-+ 1 2 3)))
+
+;; Returns a functions that prints its argument to the writer supplied to this function.
+(defn print-logger
+  [writer]
+  #(binding [*out* writer]
+     (println %)))
+
+;; A "silly" function that writes to standard out.
+(def *out*-logger (print-logger *out*))
+
+;; Logs arguments to a file.
+(defn file-logger
+  [file]
+  #(with-open [f (clojure.java.io/writer file :append true)]
+      ((print-logger f) %)))
+
+(defn multi-logger
+  [& loggers]
+  #(doseq [l loggers]
+     (l %)))
+
+(defn timestamped-logger
+  [logger]
+  #(logger (format "[%1$tY-%1$tm-%1$te %1$tH:%1$tM:%1$tS] %2$s"
+                   (java.util.Date.)
+                   %)))
+
+(defn do-logging
+  []
+  (println (str "  "
+                "(Tortuously) Logging to standard out."))
+  (*out*-logger (str "    " "hello"))
+  (println (str "  "
+                "Logging in-memory (to a StringWriter)."))
+  (let [writer (java.io.StringWriter.)
+        retained-logger (print-logger writer)]
+    (retained-logger "hello")
+    (println (str "  "
+                  "And what did I just write?"))
+    (println (str "    "
+                  (str writer))))
+  (println (str "  "
+                "And printing to a file using the same approach."))
+  (let [filename "messages.log"
+        _ (clojure.java.io/delete-file filename true)
+        messages-logger (file-logger filename)]
+    (println (str "  "
+                  "Logging to a file."))
+    (messages-logger "hello")
+    (println (str "  "
+                  "Again, what did I log?"))
+    (println (str "    "
+                  (with-open [rdr (clojure.java.io/reader filename)]
+                    (str/join "\n" (reduce conj [] (line-seq rdr)))))))
+  (println (str "  "
+                "All these loggers are nice, but multi-logger is a composite!"))
+  (println (str "  "
+                "Logging to standard output AND a file."))
+  (let [filename "multi-messages.log"
+        _ (clojure.java.io/delete-file filename true)
+        messages-logger (file-logger filename)
+        composite-logger (multi-logger *out*-logger messages-logger)]
+    (composite-logger "hello")
+    (println (str "  "
+                  "I see standard output - but what about the file?"))
+    (println (str "    "
+                  (with-open [rdr (clojure.java.io/reader filename)]
+                    (str/join "\n" (reduce conj [] (line-seq rdr)))))))
+  (println (str "  "
+                "And finally, a time-stamped logger."))
+  (let [filename "stamped-messages.log"
+        _ (clojure.java.io/delete-file filename true)
+        messages-logger (file-logger filename)
+        stamped-logger (timestamped-logger (multi-logger *out*-logger messages-logger))]
+    (stamped-logger "hello")
+    (println (str "  "
+                  "I see timestamped standard output and a similar file."))
+    (println (str "    "
+                  (with-open [rdr (clojure.java.io/reader filename)]
+                    (str/join "\n" (reduce conj [] (line-seq rdr))))))))
+
 (defn do-all
   []
   (println)
@@ -168,4 +275,8 @@
   (do-literals)
   (println)
   (println "Composition of functions")
-  (do-composition))
+  (do-composition)
+  (println "Higher-order functions")
+  (do-hofs)
+  (println "Building a logging \"system\" using HOFs.")
+  (do-logging))
