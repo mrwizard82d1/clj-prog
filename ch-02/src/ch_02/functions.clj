@@ -1,5 +1,6 @@
 (ns ch-02.functions
-  (require [clojure.string :as str]))
+  (require [clojure.string :as str]
+           [clojure.xml :as xml]))
 
 (defn call-twice
   [f x]
@@ -250,6 +251,66 @@
                   (with-open [rdr (clojure.java.io/reader filename)]
                     (str/join "\n" (reduce conj [] (line-seq rdr))))))))
 
+(defn twitter-followers
+  [username]
+  (->> (str "https://api.twitter.com/1.1/users/show.xml?screen_name=" username)
+       xml/parse
+       :content
+       (filter (comp #(:followers_count) :tag))
+       first
+       :content
+       first
+       Integer/parseInt))
+
+(defn prime?
+  [n]
+  (cond
+   (== 1 n) false
+   (== 2 n) true
+   (even? n) false
+   :else (->> (range 3 (inc (Math/sqrt n)) 2)
+              (filter #(zero? (rem n %)))
+              empty?)))
+
+(defn do-pure-functions
+  []
+  (println (str "  "
+                "Querying twitter followers is not pure (an external resource)"))
+  (println (str "  "
+                "The twitter API seems to have changed."))
+  ;; Twitter now seems to require authentication so this function fails with an error code 400.
+  ;; (twitter-followers "twitterapi")
+  ;; (twitter-followers "twitterapi")
+  (println (str "  "
+                "Pure functions can be memoized."))
+  (let [candidate 1125899906842679
+        m-prime? (memoize prime?)]
+    (println (str "    "
+                  "Is a "
+                  candidate
+                  " prime? => "
+                  (time (prime? candidate))))
+    (println (str "    "
+                  "Is a "
+                  candidate
+                  " prime? (first memoized) => "
+                  (time (m-prime? candidate))))
+    (println (str "    "
+                  "Is a "
+                  candidate
+                  " prime? (subsequence memoized) => "
+                  (time (m-prime? candidate)))))
+  (println (str "  "
+                "But \"impure\" functions cannot be memoized (internal state)."))
+  (let [m-rand-int (memoize rand-int)]
+    (println (str "    "
+                  "The original version returns"))
+    (println (str "    " (vec (repeatedly 10 (partial rand-int 10)))))
+    (println (str "    "
+                  "But the memoized version returns"))
+    (println (str "    "
+                  (vec (repeatedly 10 (partial m-rand-int 10)))))))
+
 (defn do-all
   []
   (println)
@@ -279,4 +340,6 @@
   (println "Higher-order functions")
   (do-hofs)
   (println "Building a logging \"system\" using HOFs.")
-  (do-logging))
+  (do-logging)
+  (println "Pure functions")
+  (do-pure-functions))
