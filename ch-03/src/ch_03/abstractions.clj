@@ -7,7 +7,7 @@
 ;; evaluated. Because I had spent a couple of hours "fighting"
 ;; with how to eliminate this duplication, I opted to live with it.
 (defmacro print-eval-symbol [sexpr]
-  `(println (str "  " '~sexpr " = " ~sexpr)))
+  `(println (str "    " '~sexpr " = " ~sexpr)))
 
 (defn do-vector-ops
   []
@@ -47,25 +47,25 @@
         m {:a 5 :b 6}
         s #{1 2}
         l '(1)]
-    (println " " '(into v [4 5]) "=" (into v [4 5]))
-    (println " " '(into m [[:c 7] [:d 8]]) "=" (into m [[:c 7] [:d 8]]))
-    (println " " '(into s [2 3 4 5 3 3 2]) "=" (into s [2 3 4 5 3 3 2]))
-    (println " " '(into l {:a 1 :b 2}))))
+    (print-eval-symbol (into v [4 5]))
+    (print-eval-symbol (into m [[:c 7] [:d 8]]))
+    (print-eval-symbol (into s [2 3 4 5 3 3 2]))
+    (print-eval-symbol (into l {:a 1 :b 2}))))
 
 (defn do-all
   []
   (println)
-  (println "Vector operations")
+  (println "  Vector operations")
   (do-vector-ops)
   (println)
-  (println "Map operations")
+  (println "  Map operations")
   (do-map-ops)
   (println)
-  (println "Set operations")
+  (println "  Set operations")
   (do-set-ops)
   (println)
-  (println "List operations")
+  (println "  List operations")
   (do-list-ops)
   (println)
-  (println "Into is built atop conj and seq")
+  (println "  Into is built atop conj and seq")
   (do-into))
