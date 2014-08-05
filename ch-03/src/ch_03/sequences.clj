@@ -58,6 +58,15 @@
                   " "
               (conj rst 42)))))
 
+(defn do-seq-not-list
+  []
+  (println "    Counting a seq is SLOW....")
+  (let [s (range 1e6)]
+    (time (count s)))
+  (println "    ...but counting a list is very fast.")
+  (let [s (apply list (range 1e6))]
+    (time (count s))))
+
 (defn do-all
   []
   (println)
@@ -77,4 +86,7 @@
   (do-rest-next)
   (println)
   (println "  Seqs are not iterators")
-  (do-seq-not-iterator))
+  (do-seq-not-iterator)
+  (println)
+  (println "  Seqs are not lists")
+  (do-seq-not-list))
