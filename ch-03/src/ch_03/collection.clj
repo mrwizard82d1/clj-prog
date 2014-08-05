@@ -1,5 +1,5 @@
 (ns ch-03.collection
-  (use [ch-03.abstractions :only [print-eval-symbol]]))
+  (use [ch-03.utils :only [print-eval-symbol]]))
 
 (defn swap-pairs
   [a-seq]
