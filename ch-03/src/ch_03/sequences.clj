@@ -67,6 +67,68 @@
   (let [s (apply list (range 1e6))]
     (time (count s))))
 
+(defn do-creating-seqs
+  []
+  (println "    Using cons")
+  (print "  ")
+  (u/do-print '(cons 0 (range 1 5)))
+  (println "    Cons always \"prepends\"")
+  (print "  ")
+  (u/do-print '(cons :a [:b :c :d]))
+  (println "    Cons and list* are equivalent")
+  (print "  ")
+  (u/do-print '(cons 0 (cons 1 (cons 2 (cons 3 (range 4 10))))))
+  (print "  ")
+  (u/do-print '(list* 0 1 2 3 (range 4 10))))
+
+(defn random-ints
+  "Returns a lazy seq of random integers in the range [0, limit]."
+  [limit]
+  (lazy-seq (cons (rand-int limit)
+                  (random-ints limit))))
+
+(defn random-ints-pr
+  [limit]
+  (lazy-seq (println "Realizing random number")
+            (cons (rand-int limit)
+                  (random-ints-pr limit))))
+
+(def rands (take 10 (random-ints-pr 50)))
+
+(defn do-lazy_seqs
+  []
+  (println "    Silly example")
+  (print "      ")
+  (println '(lazy-seq [1 2 3]) " = " (lazy-seq [1 2 3]))
+  (println "    Implementing a lazy sequence")
+  (print "      ")
+  (print (str '(take 10 (random-ints 50)) " = "))
+  (print (take 10 (random-ints 50)))
+  (println "    Realizing a lazy sequence")
+  (println "      The first item")
+  (println "      " (first rands))
+  (println "      Next three items")
+  (println "      " (nth rands 3))
+  (println "      The remaining items")
+  (println "      " (count rands))
+  (println "    Once realized, no more realizations")
+  (println "      " (count rands))
+  (println "    A better version of random-ints")
+  (print "      ")
+  (print (str '(repeatedly 10 (partial rand-ints 50))) "= ")
+  (println (repeatedly 10 (partial rand-int 50)))
+  (println "    Be careful when realizing a lazy-seq")
+  (println "      next forces realization of the head of the next")
+  (let [x (next (random-ints-pr 50))])
+  (println "      rest, on the other hand, will not realize the head of the rest")
+  (let [x (rest (random-ints-pr 50))])
+  (println "      Beware, sequential destructing uses next")
+  (let [[x & rest] (random-ints-pr 50)])
+  (println "      doall retains entire sequences as it is realized")
+  (println "      but dorun disposes of each value as it is realized")
+  (dorun (take 5 (random-ints-pr 50)))
+  )
+
 (defn do-all
   []
   (println)
@@ -89,4 +151,10 @@
   (do-seq-not-iterator)
   (println)
   (println "  Seqs are not lists")
-  (do-seq-not-list))
+  (do-seq-not-list)
+  (println)
+  (println "  Creating seqs")
+  (do-creating-seqs)
+  (println)
+  (println "  Lazy seqs")
+  (do-lazy_seqs))
